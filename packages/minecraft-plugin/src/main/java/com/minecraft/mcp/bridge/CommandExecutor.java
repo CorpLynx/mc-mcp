@@ -18,10 +18,12 @@ public class CommandExecutor {
     
     private final MinecraftServer server;
     private final Config config;
+    private final BlockOperationsHandler blockOperationsHandler;
     
     public CommandExecutor(MinecraftServer server, Config config) {
         this.server = server;
         this.config = config;
+        this.blockOperationsHandler = new BlockOperationsHandler(server, config);
     }
     
     public JsonObject handleCommand(JsonObject commandMessage) {
@@ -37,6 +39,10 @@ public class CommandExecutor {
                 case "send_message" -> sendMessage(args);
                 case "teleport_player" -> teleportPlayer(args);
                 case "give_item" -> giveItem(args);
+                case "place_block" -> blockOperationsHandler.placeBlock(args);
+                case "break_block" -> blockOperationsHandler.breakBlock(args);
+                case "fill_region" -> blockOperationsHandler.fillRegion(args);
+                case "replace_blocks" -> blockOperationsHandler.replaceBlocks(args);
                 default -> createErrorResponse("Unknown command: " + command);
             };
         } catch (Exception e) {

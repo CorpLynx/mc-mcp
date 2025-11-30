@@ -25,6 +25,11 @@ public class Config {
     private int maxCommandLength;
     private String logLevel;
     
+    // Block operation limits
+    private int maxRegionVolume;
+    private int blocksPerTick;
+    private boolean chunkLargeOperations;
+    
     public Config() {
         // Default values
         this.bridgeUrl = "ws://localhost:8080";
@@ -36,6 +41,11 @@ public class Config {
         this.requireAuth = true;
         this.maxCommandLength = 256;
         this.logLevel = "INFO";
+        
+        // Block operation defaults
+        this.maxRegionVolume = 100000;
+        this.blocksPerTick = 1000;
+        this.chunkLargeOperations = true;
     }
     
     public static Config load(Path configPath) {
@@ -99,6 +109,23 @@ public class Config {
                 config.logLevel = logging.getString("level", config.logLevel);
             }
             
+            // Load limits settings
+            if (toml.contains("limits")) {
+                Toml limits = toml.getTable("limits");
+                config.maxRegionVolume = limits.getLong("max_region_volume", (long) config.maxRegionVolume).intValue();
+                config.blocksPerTick = limits.getLong("blocks_per_tick", (long) config.blocksPerTick).intValue();
+            }
+            
+            // Load performance settings
+            if (toml.contains("performance")) {
+                Toml performance = toml.getTable("performance");
+                config.chunkLargeOperations = performance.getBoolean("chunk_large_operations", config.chunkLargeOperations);
+                // Override blocks_per_tick if specified in performance section
+                if (performance.contains("blocks_per_tick")) {
+                    config.blocksPerTick = performance.getLong("blocks_per_tick", (long) config.blocksPerTick).intValue();
+                }
+            }
+            
             LOGGER.info("Configuration loaded successfully from: {}", configPath);
             
         } catch (Exception e) {
@@ -156,6 +183,9 @@ level = "INFO"
         this.requireAuth = newConfig.requireAuth;
         this.maxCommandLength = newConfig.maxCommandLength;
         this.logLevel = newConfig.logLevel;
+        this.maxRegionVolume = newConfig.maxRegionVolume;
+        this.blocksPerTick = newConfig.blocksPerTick;
+        this.chunkLargeOperations = newConfig.chunkLargeOperations;
         LOGGER.info("Configuration reloaded");
     }
     
@@ -186,4 +216,7 @@ level = "INFO"
     public boolean isRequireAuth() { return requireAuth; }
     public int getMaxCommandLength() { return maxCommandLength; }
     public String getLogLevel() { return logLevel; }
+    public int getMaxRegionVolume() { return maxRegionVolume; }
+    public int getBlocksPerTick() { return blocksPerTick; }
+    public boolean isChunkLargeOperations() { return chunkLargeOperations; }
 }

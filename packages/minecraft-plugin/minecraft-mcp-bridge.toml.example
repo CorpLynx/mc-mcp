@@ -93,3 +93,28 @@ max_command_length = 256
 # - WARN: Warning messages about potential issues
 # - ERROR: Only error messages
 level = "INFO"
+
+# ============================================================================
+# Operation Limits
+# ============================================================================
+[limits]
+# Maximum volume (in blocks) for region operations like fill_region and replace_blocks
+# Prevents operations that are too large and could cause server lag
+# Default: 100000 blocks (e.g., 46x46x46 cube)
+max_region_volume = 100000
+
+# Number of blocks to process per tick for large operations
+# Lower values reduce lag but make operations slower
+# Higher values complete faster but may cause lag spikes
+# Default: 1000 blocks per tick
+blocks_per_tick = 1000
+
+# ============================================================================
+# Performance Settings
+# ============================================================================
+[performance]
+# Whether to chunk large block operations across multiple ticks
+# When true, operations larger than blocks_per_tick are spread over time
+# When false, all operations complete in a single tick (may cause lag)
+# Default: true (recommended)
+chunk_large_operations = true
