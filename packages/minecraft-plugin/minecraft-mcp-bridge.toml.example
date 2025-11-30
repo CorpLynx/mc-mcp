@@ -1,0 +1,95 @@
+# Minecraft MCP Bridge - Mod Configuration
+# Place this file in your Minecraft server's config directory as:
+# config/minecraft-mcp-bridge.toml
+
+# ============================================================================
+# Bridge Server Connection Settings
+# ============================================================================
+[bridge]
+# WebSocket URL of the Bridge Server
+# The mod connects to this server to send events and receive commands
+url = "ws://localhost:8080"
+
+# Authentication token for connecting to the Bridge Server
+# Must match the MINECRAFT_AUTH_TOKEN configured on the Bridge Server
+auth_token = "your-secure-token-here"
+
+# Number of reconnection attempts if connection is lost
+# Set to 0 to disable automatic reconnection
+reconnect_attempts = 5
+
+# Delay between reconnection attempts in milliseconds
+# Uses exponential backoff: 1x, 2x, 4x, 8x, 16x this value
+reconnect_delay = 5000
+
+# ============================================================================
+# Event Configuration
+# ============================================================================
+[events]
+# List of event types to monitor and transmit to the Bridge Server
+# Available event types:
+#   - player_join: When a player joins the server
+#   - player_quit: When a player leaves the server
+#   - player_chat: When a player sends a chat message
+#   - player_death: When a player dies
+#   - block_break: When a player breaks a block
+#
+# Leave empty to disable all events, or remove specific events to filter them out
+enabled = [
+    "player_join",
+    "player_quit",
+    "player_chat",
+    "player_death",
+    "block_break"
+]
+
+# ============================================================================
+# Command Security Settings
+# ============================================================================
+[commands]
+# Whitelist of allowed command patterns using regular expressions
+# Commands that don't match any pattern will be rejected
+# 
+# Examples:
+#   "^say .*"                           - Allow any 'say' command
+#   "^tp \\w+ -?\\d+ -?\\d+ -?\\d+$"   - Allow teleport with coordinates
+#   "^give \\w+ \\w+ \\d+$"            - Allow give item commands
+#   "^time set (day|night)$"           - Allow setting time to day or night
+#   "^weather (clear|rain|thunder)$"   - Allow weather changes
+#
+# SECURITY WARNING: Be very careful with patterns that allow arbitrary commands
+# Avoid patterns like ".*" which would allow any command
+allowed_patterns = [
+    "^say .*",
+    "^tp \\w+ -?\\d+ -?\\d+ -?\\d+$",
+    "^give \\w+ \\w+ \\d+$",
+    "^time set (day|night|noon|midnight)$",
+    "^weather (clear|rain|thunder)$",
+    "^gamemode (survival|creative|adventure|spectator) \\w+$"
+]
+
+# ============================================================================
+# Security Settings
+# ============================================================================
+[security]
+# Require authentication token for Bridge Server connection
+# Should always be true in production environments
+require_auth = true
+
+# Maximum length of commands in characters
+# Commands exceeding this length will be rejected
+# Helps prevent potential buffer overflow or DoS attacks
+max_command_length = 256
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+[logging]
+# Log level for the mod
+# Options: TRACE, DEBUG, INFO, WARN, ERROR
+# - TRACE: Very detailed logging (use for debugging only)
+# - DEBUG: Detailed logging including message contents
+# - INFO: General information about operations (recommended)
+# - WARN: Warning messages about potential issues
+# - ERROR: Only error messages
+level = "INFO"
