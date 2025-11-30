@@ -37,11 +37,35 @@ The Minecraft MCP Bridge consists of three components that work together to enab
 
 ## Quick Start
 
+### Docker Deployment (Recommended)
+
+The easiest way to deploy the MCP Server and Bridge Server is using Docker:
+
+```bash
+# 1. Copy and configure environment variables
+cp .env.docker.example .env
+# Edit .env with secure authentication tokens
+
+# 2. Start services with Docker Compose
+docker-compose up -d
+
+# 3. Check service health
+curl http://localhost:8081/health
+
+# 4. View logs
+docker-compose logs -f
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete Docker deployment instructions and production considerations.
+
+### Manual Installation
+
 ### Prerequisites
 
 - **Node.js 18+** and npm (for MCP Server and Bridge Server)
 - **Java 17+** (for Minecraft Mod)
 - **Minecraft Server** with NeoForge 1.20.1+ installed
+- **Docker** (optional, for containerized deployment)
 
 ### 1. Install Dependencies
 
@@ -195,6 +219,55 @@ Key settings:
 - `events.enabled` - List of event types to monitor
 - `commands.allowed_patterns` - Regex patterns for allowed commands
 - `security.max_command_length` - Maximum command length (default: 256)
+
+## Deployment
+
+### Docker Deployment
+
+For production deployments, we recommend using Docker:
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for:
+- Complete Docker deployment guide
+- Minecraft Mod installation instructions
+- Production security considerations
+- Monitoring and health checks
+- Troubleshooting common issues
+
+### Kubernetes Deployment
+
+For Kubernetes deployments, you can use the Docker images as a base. Example manifests:
+
+```yaml
+# See DEPLOYMENT.md for complete Kubernetes examples
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bridge-server
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: bridge-server
+        image: minecraft-bridge-server:latest
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+```
 
 ## Development
 

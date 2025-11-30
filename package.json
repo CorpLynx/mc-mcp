@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "integration-tests"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
+    "test:integration": "npm run test --workspace=integration-tests",
     "clean": "npm run clean --workspaces"
   },
   "devDependencies": {

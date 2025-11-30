@@ -363,7 +363,12 @@
   - Document the message protocol and schemas
   - _Requirements: 4.1, 4.2_
 
-- [ ] 10. Create Docker deployment setup
+- [x] 10. Create Docker deployment setup
+
+
+
+
+
   - Create Dockerfile for MCP Server
   - Create Dockerfile for Bridge Server
   - Create docker-compose.yml for running MCP Server and Bridge Server together
@@ -371,7 +376,11 @@
   - Add health check endpoints to Bridge Server
   - _Requirements: 3.1, 3.2_
 
-- [ ]* 11. Write integration tests
+- [x] 11. Write integration tests
+
+
+
+
   - Create test that starts all three components
   - Test event flow: trigger Minecraft event → verify MCP notification
   - Test command flow: invoke MCP tool → verify Minecraft command execution

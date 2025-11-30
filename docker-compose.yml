@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Bridge Server - WebSocket relay between MCP Server and Minecraft Mod
+  bridge-server:
+    build:
+      context: .
+      dockerfile: packages/bridge-server/Dockerfile
+    container_name: minecraft-bridge-server
+    ports:
+      - "8080:8080"  # WebSocket port
+      - "8081:8081"  # Health check port
+    environment:
+      # Server configuration
+      PORT: 8080
+      
+      # Authentication tokens
+      MCP_AUTH_TOKENS: ${MCP_AUTH_TOKENS:-mcp-token-1,mcp-token-2}
+      MINECRAFT_AUTH_TOKEN: ${MINECRAFT_AUTH_TOKEN:-minecraft-token-here}
+      
+      # Message queue configuration
+      MESSAGE_QUEUE_SIZE: ${MESSAGE_QUEUE_SIZE:-1000}
+      
+      # Connection health monitoring
+      HEARTBEAT_INTERVAL: ${HEARTBEAT_INTERVAL:-30000}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    restart: unless-stopped
+    networks:
+      - minecraft-mcp-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # MCP Server - Exposes Minecraft operations as MCP tools
+  mcp-server:
+    build:
+      context: .
+      dockerfile: packages/mcp-server/Dockerfile
+    container_name: minecraft-mcp-server
+    environment:
+      # Bridge Server connection
+      BRIDGE_URL: ws://bridge-server:8080
+      AUTH_TOKEN: ${MCP_AUTH_TOKEN:-mcp-token-1}
+      
+      # Connection resilience
+      RECONNECT_ATTEMPTS: ${RECONNECT_ATTEMPTS:-5}
+      RECONNECT_DELAY: ${RECONNECT_DELAY:-1000}
+      
+      # Logging
+      LOG_LEVEL: ${MCP_LOG_LEVEL:-INFO}
+      
+      # MCP protocol configuration
+      MCP_SERVER_NAME: ${MCP_SERVER_NAME:-minecraft-mcp-server}
+      MCP_SERVER_VERSION: ${MCP_SERVER_VERSION:-1.0.0}
+    restart: unless-stopped
+    depends_on:
+      bridge-server:
+        condition: service_healthy
+    networks:
+      - minecraft-mcp-network
+
+networks:
+  minecraft-mcp-network:
+    driver: bridge
+    name: minecraft-mcp-network
+
+# Volume definitions (if needed for persistent data in the future)
+volumes:
+  bridge-logs:
+    driver: local
+  mcp-logs:
+    driver: local

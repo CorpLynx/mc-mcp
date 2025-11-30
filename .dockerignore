@@ -1,0 +1,53 @@
+# Node modules (will be installed in container)
+node_modules
+packages/*/node_modules
+
+# Build artifacts (will be built in container)
+dist
+packages/*/dist
+
+# Test files
+*.test.ts
+*.test.js
+__tests__
+coverage
+
+# Development files
+.env
+.env.local
+*.log
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github
+
+# Minecraft plugin (not needed for Docker images)
+packages/minecraft-plugin
+
+# Gradle files
+*.gradle
+gradlew
+gradlew.bat
+gradle
+
+# Java files
+*.java
+*.jar
+*.class
+
+# Other
+.DS_Store
+Thumbs.db

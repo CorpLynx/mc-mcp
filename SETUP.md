@@ -11,6 +11,8 @@ This guide provides step-by-step instructions for setting up the Minecraft MCP B
 - [Testing the Setup](#testing-the-setup)
 - [Troubleshooting](#troubleshooting)
 
+> **Note:** For comprehensive Docker deployment instructions, production considerations, and Minecraft Mod deployment, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Prerequisites
 
 ### Required Software
@@ -373,122 +375,75 @@ pm2 startup
 
 Docker provides an isolated and reproducible deployment environment.
 
-### Step 1: Build Docker Images
+> **For complete Docker deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md)**
 
-**Bridge Server Dockerfile** (packages/bridge-server/Dockerfile):
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/bridge-server/package*.json ./packages/bridge-server/
-
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY packages/shared ./packages/shared
-COPY packages/bridge-server ./packages/bridge-server
-
-# Build
-RUN npm run build
-
-WORKDIR /app/packages/bridge-server
-
-EXPOSE 8080
-
-CMD ["npm", "start"]
-```
-
-**MCP Server Dockerfile** (packages/mcp-server/Dockerfile):
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY packages/shared/package*.json ./packages/shared/
-COPY packages/mcp-server/package*.json ./packages/mcp-server/
-
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY packages/shared ./packages/shared
-COPY packages/mcp-server ./packages/mcp-server
-
-# Build
-RUN npm run build
-
-WORKDIR /app/packages/mcp-server
-
-CMD ["npm", "start"]
-```
-
-### Step 2: Docker Compose
-
-Create `docker-compose.yml`:
-```yaml
-version: '3.8'
-
-services:
-  bridge-server:
-    build:
-      context: .
-      dockerfile: packages/bridge-server/Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - PORT=8080
-      - MCP_AUTH_TOKENS=${MCP_AUTH_TOKENS}
-      - MINECRAFT_AUTH_TOKEN=${MINECRAFT_AUTH_TOKEN}
-      - LOG_LEVEL=info
-    restart: unless-stopped
-    networks:
-      - mcp-bridge
-
-  mcp-server:
-    build:
-      context: .
-      dockerfile: packages/mcp-server/Dockerfile
-    environment:
-      - BRIDGE_URL=ws://bridge-server:8080
-      - AUTH_TOKEN=${MCP_AUTH_TOKEN}
-      - LOG_LEVEL=INFO
-    depends_on:
-      - bridge-server
-    restart: unless-stopped
-    networks:
-      - mcp-bridge
-
-networks:
-  mcp-bridge:
-    driver: bridge
-```
-
-Create `.env` file for Docker Compose:
-```env
-MCP_AUTH_TOKENS=your-secure-token-1,your-secure-token-2
-MINECRAFT_AUTH_TOKEN=your-secure-token-3
-MCP_AUTH_TOKEN=your-secure-token-1
-```
-
-### Step 3: Run with Docker Compose
+### Quick Start with Docker
 
 ```bash
-# Build and start services
+# 1. Copy environment configuration
+cp .env.docker.example .env
+
+# 2. Edit .env with secure tokens
+nano .env
+
+# 3. Start services
 docker-compose up -d
 
-# View logs
+# 4. Check health
+curl http://localhost:8081/health
+
+# 5. View logs
 docker-compose logs -f
+```
+
+### Using the Makefile
+
+The project includes a Makefile for common operations:
+
+```bash
+# Build Docker images
+make build
+
+# Start services
+make start
+
+# View logs
+make logs
+
+# Check health
+make health
 
 # Stop services
-docker-compose down
+make stop
+
+# Clean up everything
+make clean
+
+# Generate secure tokens
+make generate-tokens
 ```
+
+### Testing Docker Setup
+
+Run the automated Docker test script:
+
+```bash
+# Linux/Mac
+chmod +x scripts/test-docker.sh
+./scripts/test-docker.sh
+
+# Windows PowerShell
+.\scripts\test-docker.ps1
+```
+
+For detailed Docker deployment instructions including:
+- Multi-stage builds
+- Production configurations
+- Kubernetes deployment
+- Monitoring and health checks
+- Security best practices
+
+See [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## Testing the Setup
 

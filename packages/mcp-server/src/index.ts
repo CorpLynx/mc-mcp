@@ -385,6 +385,150 @@ const tools: Tool[] = [
       },
       required: ['entityType', 'x', 'y', 'z']
     }
+  },
+  {
+    name: 'place_block',
+    description: 'Place a block at specific coordinates',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        x: {
+          type: 'number',
+          description: 'X coordinate'
+        },
+        y: {
+          type: 'number',
+          description: 'Y coordinate'
+        },
+        z: {
+          type: 'number',
+          description: 'Z coordinate'
+        },
+        blockType: {
+          type: 'string',
+          description: 'The block type to place (e.g., stone, dirt, diamond_block)'
+        },
+        world: {
+          type: 'string',
+          description: 'Optional world name'
+        }
+      },
+      required: ['x', 'y', 'z', 'blockType']
+    }
+  },
+  {
+    name: 'break_block',
+    description: 'Break a block at specific coordinates',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        x: {
+          type: 'number',
+          description: 'X coordinate'
+        },
+        y: {
+          type: 'number',
+          description: 'Y coordinate'
+        },
+        z: {
+          type: 'number',
+          description: 'Z coordinate'
+        },
+        world: {
+          type: 'string',
+          description: 'Optional world name'
+        }
+      },
+      required: ['x', 'y', 'z']
+    }
+  },
+  {
+    name: 'fill_region',
+    description: 'Fill a rectangular region with a specific block type',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        x1: {
+          type: 'number',
+          description: 'First corner X coordinate'
+        },
+        y1: {
+          type: 'number',
+          description: 'First corner Y coordinate'
+        },
+        z1: {
+          type: 'number',
+          description: 'First corner Z coordinate'
+        },
+        x2: {
+          type: 'number',
+          description: 'Second corner X coordinate'
+        },
+        y2: {
+          type: 'number',
+          description: 'Second corner Y coordinate'
+        },
+        z2: {
+          type: 'number',
+          description: 'Second corner Z coordinate'
+        },
+        blockType: {
+          type: 'string',
+          description: 'The block type to fill with (e.g., stone, dirt, diamond_block)'
+        },
+        world: {
+          type: 'string',
+          description: 'Optional world name'
+        }
+      },
+      required: ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'blockType']
+    }
+  },
+  {
+    name: 'replace_blocks',
+    description: 'Replace all blocks of one type with another type in a rectangular region',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        x1: {
+          type: 'number',
+          description: 'First corner X coordinate'
+        },
+        y1: {
+          type: 'number',
+          description: 'First corner Y coordinate'
+        },
+        z1: {
+          type: 'number',
+          description: 'First corner Z coordinate'
+        },
+        x2: {
+          type: 'number',
+          description: 'Second corner X coordinate'
+        },
+        y2: {
+          type: 'number',
+          description: 'Second corner Y coordinate'
+        },
+        z2: {
+          type: 'number',
+          description: 'Second corner Z coordinate'
+        },
+        sourceBlock: {
+          type: 'string',
+          description: 'The block type to replace (e.g., stone, dirt)'
+        },
+        targetBlock: {
+          type: 'string',
+          description: 'The block type to replace with (e.g., diamond_block, gold_block)'
+        },
+        world: {
+          type: 'string',
+          description: 'Optional world name'
+        }
+      },
+      required: ['x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'sourceBlock', 'targetBlock']
+    }
   }
 ];
 
@@ -439,6 +583,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       case 'spawn_entity':
         result = await handleSpawnEntity(args as { entityType: string; x: number; y: number; z: number; world?: string; count?: number });
+        break;
+      case 'place_block':
+        result = await handlePlaceBlock(args as { x: number; y: number; z: number; blockType: string; world?: string });
+        break;
+      case 'break_block':
+        result = await handleBreakBlock(args as { x: number; y: number; z: number; world?: string });
+        break;
+      case 'fill_region':
+        result = await handleFillRegion(args as { x1: number; y1: number; z1: number; x2: number; y2: number; z2: number; blockType: string; world?: string });
+        break;
+      case 'replace_blocks':
+        result = await handleReplaceBlocks(args as { x1: number; y1: number; z1: number; x2: number; y2: number; z2: number; sourceBlock: string; targetBlock: string; world?: string });
         break;
       default:
         throw new Error(`Unknown tool: ${name}`);
@@ -714,6 +870,126 @@ async function handleSpawnEntity(args: { entityType: string; x: number; y: numbe
     return {
       success: false,
       error: `Failed to spawn ${args.entityType}${countInfo} at coordinates (${args.x}, ${args.y}, ${args.z})${worldInfo}: ${errorMessage}`
+    };
+  }
+}
+
+// Block manipulation handlers
+async function handlePlaceBlock(args: { x: number; y: number; z: number; blockType: string; world?: string }): Promise<CommandResult> {
+  try {
+    // Validate block type is not empty
+    if (!args.blockType || args.blockType.trim().length === 0) {
+      logger.warn('Invalid block type: empty string', { args });
+      return {
+        success: false,
+        error: 'Block type cannot be empty'
+      };
+    }
+
+    const response = await bridgeClient.sendCommand('place_block', args);
+    return response as CommandResult;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to place block';
+    const worldInfo = args.world ? ` in world '${args.world}'` : '';
+    logger.error(`Failed to place ${args.blockType} at (${args.x}, ${args.y}, ${args.z})${worldInfo}`, error);
+    return {
+      success: false,
+      error: `Failed to place block '${args.blockType}' at coordinates (${args.x}, ${args.y}, ${args.z})${worldInfo}: ${errorMessage}`
+    };
+  }
+}
+
+async function handleBreakBlock(args: { x: number; y: number; z: number; world?: string }): Promise<CommandResult> {
+  try {
+    const response = await bridgeClient.sendCommand('break_block', args);
+    return response as CommandResult;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to break block';
+    const worldInfo = args.world ? ` in world '${args.world}'` : '';
+    logger.error(`Failed to break block at (${args.x}, ${args.y}, ${args.z})${worldInfo}`, error);
+    return {
+      success: false,
+      error: `Failed to break block at coordinates (${args.x}, ${args.y}, ${args.z})${worldInfo}: ${errorMessage}`
+    };
+  }
+}
+
+async function handleFillRegion(args: { x1: number; y1: number; z1: number; x2: number; y2: number; z2: number; blockType: string; world?: string }): Promise<CommandResult> {
+  try {
+    // Validate block type is not empty
+    if (!args.blockType || args.blockType.trim().length === 0) {
+      logger.warn('Invalid block type: empty string', { args });
+      return {
+        success: false,
+        error: 'Block type cannot be empty'
+      };
+    }
+
+    // Calculate region volume for validation
+    const volume = Math.abs(args.x2 - args.x1 + 1) * Math.abs(args.y2 - args.y1 + 1) * Math.abs(args.z2 - args.z1 + 1);
+    
+    // Log large region operations
+    if (volume > 10000) {
+      logger.info(`Large fill_region operation requested`, { 
+        volume, 
+        blockType: args.blockType,
+        region: { x1: args.x1, y1: args.y1, z1: args.z1, x2: args.x2, y2: args.y2, z2: args.z2 }
+      });
+    }
+
+    const response = await bridgeClient.sendCommand('fill_region', args);
+    return response as CommandResult;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fill region';
+    const worldInfo = args.world ? ` in world '${args.world}'` : '';
+    logger.error(`Failed to fill region (${args.x1}, ${args.y1}, ${args.z1}) to (${args.x2}, ${args.y2}, ${args.z2}) with ${args.blockType}${worldInfo}`, error);
+    return {
+      success: false,
+      error: `Failed to fill region from (${args.x1}, ${args.y1}, ${args.z1}) to (${args.x2}, ${args.y2}, ${args.z2}) with '${args.blockType}'${worldInfo}: ${errorMessage}`
+    };
+  }
+}
+
+async function handleReplaceBlocks(args: { x1: number; y1: number; z1: number; x2: number; y2: number; z2: number; sourceBlock: string; targetBlock: string; world?: string }): Promise<CommandResult> {
+  try {
+    // Validate block types are not empty
+    if (!args.sourceBlock || args.sourceBlock.trim().length === 0) {
+      logger.warn('Invalid source block type: empty string', { args });
+      return {
+        success: false,
+        error: 'Source block type cannot be empty'
+      };
+    }
+    if (!args.targetBlock || args.targetBlock.trim().length === 0) {
+      logger.warn('Invalid target block type: empty string', { args });
+      return {
+        success: false,
+        error: 'Target block type cannot be empty'
+      };
+    }
+
+    // Calculate region volume for validation
+    const volume = Math.abs(args.x2 - args.x1 + 1) * Math.abs(args.y2 - args.y1 + 1) * Math.abs(args.z2 - args.z1 + 1);
+    
+    // Log large region operations
+    if (volume > 10000) {
+      logger.info(`Large replace_blocks operation requested`, { 
+        volume, 
+        sourceBlock: args.sourceBlock,
+        targetBlock: args.targetBlock,
+        region: { x1: args.x1, y1: args.y1, z1: args.z1, x2: args.x2, y2: args.y2, z2: args.z2 }
+      });
+    }
+
+    const response = await bridgeClient.sendCommand('replace_blocks', args);
+    return response as CommandResult;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to replace blocks';
+    const worldInfo = args.world ? ` in world '${args.world}'` : '';
+    logger.error(`Failed to replace ${args.sourceBlock} with ${args.targetBlock} in region (${args.x1}, ${args.y1}, ${args.z1}) to (${args.x2}, ${args.y2}, ${args.z2})${worldInfo}`, error);
+    return {
+      success: false,
+      error: `Failed to replace '${args.sourceBlock}' with '${args.targetBlock}' in region from (${args.x1}, ${args.y1}, ${args.z1}) to (${args.x2}, ${args.y2}, ${args.z2})${worldInfo}: ${errorMessage}`
     };
   }
 }
